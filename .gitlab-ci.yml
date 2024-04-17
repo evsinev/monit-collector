@@ -1,0 +1,38 @@
+image: payneteasy/jdk-8
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository"
+  PARENT_ARTIFACT: name
+  TZ: "Europe/Moscow"
+
+cache:
+  paths:
+    - .m2/repository
+
+stages:
+  - test
+  - deploy
+  - release
+
+test:
+  stage: test
+  script:
+    - ./mvnw --settings maven-settings.xml test
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - "*/target/surefire-reports/TEST-*.xml"
+
+deploy-dev-4:
+  stage: deploy
+  script:
+    - ./mvnw --settings maven-settings.xml package -P shaded
+    - 'wget
+      --header="api-key: a6e70a36-7276-11ec-b4d7-2f6a54121c1e"
+      --header="content-type: application/zip"
+      --post-file ${PARENT_ARTIFACT}-server/target/${PARENT_ARTIFACT}-server-shaded.jar
+      -d
+      -O-
+      https://dev-4.clubber.me/dc-agent/jar/${PARENT_ARTIFACT}'
+
