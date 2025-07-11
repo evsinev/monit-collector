@@ -28,5 +28,7 @@ public interface IStartupConfig extends IJettyStartupParameters {
     @AStartupParameter(name = "LAST_EVENT_DIR", value = "./target/last-xml")
     File getLastXmlDir();
 
+    @AStartupParameter(name = "THRESHOLD_MS", value = "12000")
+    long getThresholdMs();
 
 }

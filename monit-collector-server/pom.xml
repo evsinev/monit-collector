@@ -64,7 +64,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-shade-plugin</artifactId>
-                        <version>3.2.4</version>
+                        <version>3.6.0</version>
                         <executions>
                             <execution>
                                 <phase>package</phase>
@@ -74,6 +74,13 @@
                                 <configuration>
 
                                     <finalName>monit-collector</finalName>
+
+                                    <relocations>
+                                        <relocation>
+                                            <pattern>com.payneteasy</pattern>
+                                            <shadedPattern>com.acme2</shadedPattern>
+                                        </relocation>
+                                    </relocations>
 
                                     <transformers>
                                         <transformer

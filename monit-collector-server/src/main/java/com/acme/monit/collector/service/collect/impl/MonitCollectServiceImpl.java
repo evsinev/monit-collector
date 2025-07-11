@@ -5,6 +5,7 @@ import com.acme.monit.collector.service.collect.messages.MonitCollectRequest;
 import com.acme.monit.collector.service.collect.messages.MonitCollectResponse;
 import com.acme.monit.collector.service.collect.model.MonitEvent;
 import com.acme.monit.collector.service.collect.model.MonitEventActionType;
+import com.acme.monit.collector.service.keepalive.IKeepAliveService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.payneteasy.telegram.bot.client.ITelegramService;
@@ -28,13 +29,15 @@ public class MonitCollectServiceImpl implements IMonitCollectService {
     private final ITelegramService telegram;
     private final long             chatId;
     private final long             technicalChatId;
-    private final File             lastStatusDir;
+    private final File              lastStatusDir;
+    private final IKeepAliveService absentService;
 
-    public MonitCollectServiceImpl(ITelegramService telegram, long aChatId, long aTechnicalChatId, File aLastStatusDir) {
-        this.telegram   = telegram;
-        chatId          = aChatId;
-        technicalChatId = aTechnicalChatId;
-        lastStatusDir   = aLastStatusDir;
+    public MonitCollectServiceImpl(ITelegramService telegram, long chatId, long technicalChatId, File lastStatusDir, IKeepAliveService absentService) {
+        this.telegram        = telegram;
+        this.chatId          = chatId;
+        this.technicalChatId = technicalChatId;
+        this.lastStatusDir   = lastStatusDir;
+        this.absentService   = absentService;
     }
 
     public MonitCollectResponse receiveMonitCollect(MonitCollectRequest aRequest) {
@@ -46,6 +49,7 @@ public class MonitCollectServiceImpl implements IMonitCollectService {
                     .build();
         }
 
+        absentService.addMessage(aRequest);
         saveEvent(aRequest);
         processEvent(aRequest);
 
@@ -89,7 +93,7 @@ public class MonitCollectServiceImpl implements IMonitCollectService {
                 .text      ( message              )
                 .build());
 
-        if (event.getActionType() == MonitEventActionType.ALERT) {
+        if (event.getActionType() == MonitEventActionType.ALERT || event.getActionType() == MonitEventActionType.RESTART) {
             telegram.sendMessage(TelegramMessageRequest.builder()
                     .chatId(chatId)
                     .text(
