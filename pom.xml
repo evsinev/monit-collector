@@ -62,7 +62,7 @@
             <dependency>
                 <groupId>com.payneteasy.mini-framework</groupId>
                 <artifactId>mini-core</artifactId>
-                <version>2.0-SNAPSHOT</version>
+                <version>${mini.version}</version>
             </dependency>
 
             <dependency>
