@@ -59,12 +59,21 @@ public class MonitCollectServiceImpl implements IMonitCollectService {
     }
 
     private void saveEvent(MonitCollectRequest aRequest) {
-        File file = new File(lastStatusDir, aRequest.getServer().getLocalHostname() + ".json");
-        try (FileWriter out = new FileWriter(file)) {
+        String filename     = aRequest.getServer().getLocalHostname() + ".json";
+        String tempFilename = filename + ".tmp." + System.currentTimeMillis();
+        File   tempFile     = new File(lastStatusDir, tempFilename);
+
+        try (FileWriter out = new FileWriter(tempFile)) {
             gson.toJson(aRequest, out);
         } catch (Exception e) {
             LOG.error("Cannot write last status", e);
+            return;
         }
+
+        if (!tempFile.renameTo(new File(lastStatusDir, filename))) {
+            LOG.error("Cannot rename tempFile {} to {}", tempFile.getAbsolutePath(), filename);
+        }
+
     }
 
     private void processEvent(MonitCollectRequest aRequest) {

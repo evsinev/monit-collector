@@ -28,7 +28,13 @@ public interface IStartupConfig extends IJettyStartupParameters {
     @AStartupParameter(name = "LAST_EVENT_DIR", value = "./target/last-xml")
     File getLastXmlDir();
 
-    @AStartupParameter(name = "THRESHOLD_MS", value = "12000")
+    @AStartupParameter(name = "THRESHOLD_MS", value = "120000")
     long getThresholdMs();
+
+    @AStartupParameter(name = "ASSETS_INDEX_JS_URI", value = "/monit-collector-assets/index.js")
+    String assetsIndexJsUri();
+
+    @AStartupParameter(name = "ASSETS_INDEX_CSS_URI", value = "/monit-collector-assets/index.css")
+    String assetsIndexCssUri();
 
 }

@@ -1,30 +1,22 @@
 package com.acme.monit.collector;
 
-import com.acme.monit.collector.service.collect.impl.MonitCollectServiceImpl;
-import com.acme.monit.collector.service.keepalive.IKeepAliveService;
-import com.acme.monit.collector.service.keepalive.impl.CheckKeepLiveTask;
-import com.acme.monit.collector.service.keepalive.impl.KeepAliveInfo;
-import com.acme.monit.collector.service.keepalive.impl.KeepAliveMapCreator;
-import com.acme.monit.collector.service.keepalive.impl.KeepAliveServiceImpl;
-import com.acme.monit.collector.service.telegram.ITelegramCheckService;
-import com.acme.monit.collector.service.telegram.TelegramCheckServiceImpl;
+import com.acme.monit.collector.service.host.IHostService;
+import com.acme.monit.collector.service.host.messages.HostListRequest;
 import com.acme.monit.collector.servlet.MonitCollectServlet;
+import com.acme.monit.collector.servlet.PageReactServlet;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.payneteasy.apiservlet.GsonJettyContextHandler;
 import com.payneteasy.jetty.util.*;
 import com.payneteasy.mini.core.app.AppContext;
-import com.payneteasy.telegram.bot.client.ITelegramService;
-import com.payneteasy.telegram.bot.client.http.TelegramHttpClientImpl;
-import com.payneteasy.telegram.bot.client.impl.TelegramServiceImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.ConcurrentMap;
+import com.payneteasy.mini.core.error.handler.ApiExceptionHandler;
+import com.payneteasy.mini.core.error.handler.ApiRequestValidator;
+import org.eclipse.jetty.ee8.servlet.ServletContextHandler;
 
 import static com.payneteasy.mini.core.app.AppRunner.runApp;
 import static com.payneteasy.startup.parameters.StartupParametersFactory.getStartupParameters;
 
 public class MonitCollectorApplication {
-
-    private static final Logger LOG = LoggerFactory.getLogger( MonitCollectorApplication.class );
 
     public static void main(String[] args) {
         runApp(args, MonitCollectorApplication::run);
@@ -36,24 +28,11 @@ public class MonitCollectorApplication {
         config.getLastJsonDir().mkdirs();
         config.getLastXmlDir().mkdirs();
 
-        TelegramHttpClientImpl               httpClient        = new TelegramHttpClientImpl(config.getTelegramToken());
-        ITelegramService                     telegramService   = new TelegramServiceImpl(httpClient);
-        ITelegramCheckService                checkService      = new TelegramCheckServiceImpl(telegramService);
-        ConcurrentMap<String, KeepAliveInfo> map               = KeepAliveMapCreator.createKeepAliveMap(config.getLastXmlDir());
-        IKeepAliveService                    absentService     = new KeepAliveServiceImpl(map);
-        CheckKeepLiveTask                    checkKeepLiveTask = new CheckKeepLiveTask(map, telegramService, config.getTelegramTechnicalChatId(), config.getThresholdMs());
+        MonitCollectorFactory factory = new MonitCollectorFactory(config);
 
-        MonitCollectServiceImpl collectService  = new MonitCollectServiceImpl(
-                telegramService
-                , config.getTelegramChatId()
-                , config.getTelegramTechnicalChatId()
-                , config.getLastJsonDir()
-                , absentService
-        );
+        factory.telegramCheckService().checkChatAccess(config.getTelegramTechnicalChatId());
 
-        checkService.checkChatAccess(config.getTelegramTechnicalChatId());
-
-        Thread checkThread = new Thread(checkKeepLiveTask, "check-keep-alive");
+        Thread checkThread = new Thread(factory.checkKeepLiveTask(), "check-keep-alive");
         checkThread.start();
 
         JettyServer jetty = new JettyServerBuilder()
@@ -62,14 +41,32 @@ public class MonitCollectorApplication {
 
                 .filter("/*", new PreventStackTraceFilter())
                 .servlet("/health", new HealthServlet())
-                .servlet("/collect", new MonitCollectServlet(collectService, config.getLastXmlDir()))
-
+                .servlet("/collect", new MonitCollectServlet(factory.monitCollectService(), config.getLastXmlDir()))
+                .servlet("/ui/*", new PageReactServlet(config.assetsIndexJsUri(), config.assetsIndexCssUri()))
+                .contextListener(context -> onContext(context, factory))
                 .shutdownListener(checkThread::interrupt)
 
                 .build();
 
-
         jetty.startJetty();
+
+    }
+
+    private static void onContext(ServletContextHandler context, MonitCollectorFactory factory) {
+        Gson gson = new GsonBuilder()
+                .setPrettyPrinting()
+                .disableHtmlEscaping()
+                .create();
+
+        GsonJettyContextHandler gsonHandler = new GsonJettyContextHandler(
+                context
+                , gson
+                , new ApiExceptionHandler()
+                , new ApiRequestValidator()
+        );
+
+        IHostService hostService = factory.hostService();
+        gsonHandler.addApi("/api/host/list/*", hostService::listAllHosts, HostListRequest.class);
 
     }
 
