@@ -17,7 +17,11 @@
         <mini.version>2.0-1</mini.version>
 
         <slf4j.version>2.0.17</slf4j.version>
-        <logback.version>1.5.18</logback.version>
+        <logback.version>1.6.5</logback.version>
+        <jetty.version>12.0.40</jetty.version>
+        <jackson.version>2.21.7</jackson.version>
+        <micrometer.version>1.17.1</micrometer.version>
+        <commons-io.version>2.22.0</commons-io.version>
     </properties>
 
     <repositories>
@@ -30,6 +34,61 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <!-- CVE fixes: com.payneteasy:jetty-util (via mini-core) brings Jetty 12.0.20 -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-bom</artifactId>
+                <version>${jetty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.eclipse.jetty.ee8</groupId>
+                <artifactId>jetty-ee8-bom</artifactId>
+                <version>${jetty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- CVE fixes: jetty-util brings micrometer 1.11.12 (+ LatencyUtils, old HdrHistogram) -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-bom</artifactId>
+                <version>${micrometer.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- CVE fixes: jackson-core / jackson-databind 2.15.0 (via jackson-dataformat-xml) -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- CVE fixes: com.payneteasy:slf4j-stable brings logback 1.5.18 -->
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
+
+            <!-- CVE-2024-47554: com.payneteasy:telegram-bot-client brings commons-io 2.7 -->
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.projectlombok</groupId>
@@ -74,7 +133,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-xml</artifactId>
-                <version>2.15.0</version>
+                <version>${jackson.version}</version>
             </dependency>
 
             <dependency>
