@@ -19,7 +19,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <logback.version>1.6.5</logback.version>
         <jetty.version>12.0.40</jetty.version>
-        <jackson.version>2.21.7</jackson.version>
+        <jackson.version>2.21.8</jackson.version>
         <micrometer.version>1.17.1</micrometer.version>
         <commons-io.version>2.22.0</commons-io.version>
     </properties>
@@ -61,7 +61,7 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- CVE fixes: jackson-core / jackson-databind 2.15.0 (via jackson-dataformat-xml) -->
+            <!-- CVE fixes: jackson-core / jackson-databind 2.15.0 (via jackson-dataformat-xml); 2.21.8 fixes CVE-2026-110879 -->
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
